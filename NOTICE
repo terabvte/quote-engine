@@ -1,0 +1,37 @@
+# Notice
+
+## Ownership
+
+AutoPreventivo and the Edilvos platform are proprietary work created for Edilvos, a construction
+cooperative based in Pisa, Italy. The private source repositories remain the property of their
+owners. This repository is a descriptive case study written by Marco Fediuc; it does not contain
+the system and grants no rights to it.
+
+The text, diagrams and adapted excerpts in this repository are © 2026 Marco Fediuc. No open-source
+licence is granted for reuse; see [LICENSE](LICENSE). Linking to and reading this repository are
+welcome.
+
+"Edilvos" and "AutoPreventivo" are used descriptively. Third-party product names and trademarks
+belong to their respective owners.
+
+## Intentional omissions
+
+- Application and frontend source code, project files and build configuration.
+- Price-list CSV files, catalogue rows, supplier names, unit prices and margins.
+- Customer names, addresses, phone numbers, emails, VAT identifiers and quote PDFs.
+- Any screenshot or diagram containing real data.
+- Secrets, connection strings, API keys, SAS URLs, tokens and credential-bearing configuration.
+- Azure account, resource-group, subscription and tenant identifiers, and internal hostnames.
+- The full model prompt, recipe bodies, waste factors and scope matrices.
+- Historical customer or production data of any kind.
+
+## Code excerpts
+
+The C# and TypeScript excerpts under `snippets/` are short, adapted illustrations. Catalogue codes
+and prices visible in them are synthetic. They are included to show engineering decisions, not to
+reproduce the commercial implementation.
+
+## No warranty
+
+The descriptions are provided as-is. They reflect one point in time and may not match the live
+system. See [SYNC.md](SYNC.md) for the snapshot and its limits.

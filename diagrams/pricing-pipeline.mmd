@@ -1,0 +1,13 @@
+flowchart LR
+    P["Free-text Italian request"] --> I["OpenAI intent parse<br/>schema-constrained JSON"]
+    I --> R["Invariant repair<br/>defaults + warning"]
+    R --> REC["Recipe:<br/>quantities, waste factors, scope"]
+    REC --> C{"Known catalogue code?"}
+    C -- yes --> DB["Catalogue unit price"]
+    C -- no --> V["Semantic candidates<br/>and model rerank"]
+    V --> RK{"Guards pass?"}
+    RK -- yes --> DB
+    RK -- no --> E["Model-estimated unit price<br/>labelled AI_ESTIMATE"]
+    DB --> T["C# decimal totals"]
+    E --> T
+    T --> OUT["PDF generation<br/>and persistence"]

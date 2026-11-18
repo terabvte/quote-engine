@@ -1,0 +1,32 @@
+flowchart TD
+    subgraph AI["AutoPreventivo — AI path"]
+        C["Client on edilvos.it"] --> Q["Quote form:<br/>free text + reCAPTCHA"]
+        Q --> G["POST /api/quotes/generate"]
+        G --> CAP{"CAPTCHA valid?"}
+        CAP -- no --> X["400 Bad Request"]
+        CAP -- yes --> PARSE["OpenAI intent parse<br/>schema-constrained JSON"]
+        PARSE --> REPAIR["Invariant repair<br/>defaults + warning"]
+        REPAIR --> RECIPE["Deterministic recipe<br/>quantities, waste, scope"]
+        RECIPE --> CODE{"Catalogue code<br/>known?"}
+        CODE -- yes --> PRICE["Catalogue unit price"]
+        CODE -- no --> SEM["Semantic candidates<br/>+ model rerank"]
+        SEM --> GUARD{"Guards pass?"}
+        GUARD -- yes --> PRICE
+        GUARD -- no --> EST["Model-estimated unit price<br/>labelled AI_ESTIMATE"]
+    end
+
+    subgraph MANUAL["CreaTivo — manual path"]
+        O["Operator in admin panel"] --> M["POST /api/quotes/manual<br/>X-Admin-Key"]
+        M --> DRAFT{"Draft?"}
+    end
+
+    PRICE --> TOT["C# decimal totals"]
+    EST --> TOT
+    TOT --> PDF["QuestPDF"]
+    PDF --> BLOB[("Azure Blob Storage")]
+    TOT --> DB[("Azure SQL")]
+
+    DRAFT -- yes --> DB
+    DRAFT -- no --> PDF2["Same QuestPDF"]
+    PDF2 --> BLOB
+    PDF2 --> DB
