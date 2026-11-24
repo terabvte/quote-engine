@@ -236,9 +236,10 @@ Detail: [docs/limitations.md](docs/limitations.md).
 - CV and contact: available on request.
 
 ---
-
+<!--
 ## Screenshot manifest
 
-Every hidden `<!-- SCREENSHOT: ... -->` marker above has a row in
+Every hidden marker above has a row in
 [screenshots/MANIFEST.md](screenshots/MANIFEST.md), currently `WAIVED`. No image link is added
 until the file exists.
+-->
