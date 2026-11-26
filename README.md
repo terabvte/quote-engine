@@ -4,9 +4,9 @@
 
 **Free-text Italian renovation requests in. Itemised quotes out.**
 
-![.NET 9](https://img.shields.io/badge/.NET-9-512BD4)
+![.NET 10](https://img.shields.io/badge/.NET-10-512BD4)
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-Minimal_APIs-512BD4)
-![EF Core 9](https://img.shields.io/badge/EF_Core-9-512BD4)
+![EF Core 10](https://img.shields.io/badge/EF_Core-10-512BD4)
 ![Azure](https://img.shields.io/badge/Azure-App_Service-0078D4)
 ![Next.js](https://img.shields.io/badge/Next.js-15-000000)
 
@@ -16,7 +16,8 @@
 > not a runnable app and has no build step. The live product is at
 > [edilvos.it](https://www.edilvos.it). 
 >
-> Snapshot: private commit `2dee6ae`, 2026-05-30. See [SYNC.md](SYNC.md).
+> Snapshot: private backend `bd8bf3c`, 2026-11-26; private frontend `bc9a48e`, 2026-02-28.
+> See [SYNC.md](SYNC.md).
 
 <!--
 Screenshots are waived in this version; the placeholder
@@ -27,11 +28,11 @@ Screenshots are waived in this version; the placeholder
 flowchart LR
     U["Visitor browser"] -->|HTTPS| F["Next.js 15 on Vercel"]
     F -->|JSON over HTTPS| A["ASP.NET Core Minimal API<br/>Azure App Service"]
-    A -->|EF Core 9| D[("Azure SQL")]
+    A -->|EF Core 10| D[("Azure SQL")]
     A -->|intent, rerank, fallback| L["OpenAI API"]
     A -->|PDF upload| B[("Azure Blob Storage")]
     A -->|QuestPDF| P["Quote PDF"]
-    G["GitHub Actions"] -->|build and deploy| A
+    G["GitHub Actions<br/>test and deploy"] -->|build and deploy| A
 ```
 
 ## At a glance
@@ -39,9 +40,9 @@ flowchart LR
 | | |
 |---|---|
 | **Role** | Sole developer — design, backend, pricing, PDF, frontend, deployment |
-| **Scale** | 6 renovation recipes · 16 API endpoints · 2 quote paths · 121 price-list rows · 5–30 quotes/month |
-| **Stack** | .NET 9 · ASP.NET Core Minimal APIs · EF Core 9 · Azure SQL · Azure App Service · Next.js 15 |
-| **Status** | Private production system; this repository is a sanitized case study |
+| **Scale** | 6 renovation recipes · 16 API endpoints + `/health` · 2 quote paths · 121 price-list rows · 5–30 quotes/month |
+| **Stack** | .NET 10 · ASP.NET Core Minimal APIs · EF Core 10 · Azure SQL · Azure App Service · Next.js 15 |
+| **Status** | Private production system; this repository is a sanitized case study; 48 in-process tests gate deployment |
 | **Live** | [edilvos.it](https://www.edilvos.it) |
 
 ## The problem
@@ -62,11 +63,13 @@ generating text. It is producing a number that a business can send to a customer
 
 ## What I built
 
-- The .NET backend: 8-project solution, Minimal APIs, MediatR handlers, EF Core, 16 endpoints.
+- The .NET backend: 8-project solution, Minimal APIs, MediatR handlers, EF Core, 16 API endpoints.
 - The pricing pipeline: six renovation recipes, catalogue resolution, guards, decimal totals.
 - PDF generation with QuestPDF and storage in Azure Blob Storage.
 - The Next.js frontend: marketing site, quote form, admin dashboard and the CreaTivo builder.
-- The deployment: GitHub Actions to Azure App Service.
+- The deployment: GitHub Actions to Azure App Service, with tests gating deployment.
+- The hardening: request validation, centralised admin-key access control, structured logging,
+  Application Insights telemetry, correlation IDs and `/health`.
 
 ## The boundary that matters
 
@@ -120,16 +123,42 @@ Only the creation path is new. Detail: [docs/creativo.md](docs/creativo.md).
 ## Architecture
 
 `Edilvos.*` is a small shared shell; `AutoPreventivo.*` is the product. The API is ASP.NET Core
-Minimal APIs on .NET 9, with EF Core 9 over SQL Server locally and Azure SQL in production.
+Minimal APIs on .NET 10, with EF Core 10 over SQL Server locally and Azure SQL in production.
 QuestPDF renders documents; Azure Blob Storage holds them. The model provider is the OpenAI API.
 
-- Persistence: EF Core 9, 18 migrations, three tables.
+- Persistence: EF Core 10, 18 migrations, three tables.
 - Catalogue: 121 price-list rows imported from three CSVs.
 - Deployment: GitHub Actions, Azure App Service, no container image.
 - Qdrant was a local prototype for semantic search and is not deployed.
 
 Detail: [docs/architecture.md](docs/architecture.md). Diagram:
 [system-context.mmd](diagrams/system-context.mmd).
+
+## Production hardening
+
+| Area | State at this snapshot |
+|---|---|
+| Runtime | .NET 10 / EF Core 10, deployed from `bd8bf3c` |
+| Request validation | `POST /api/quotes/manual` returns `400 ValidationProblemDetails` with field errors; `PUT /api/quotes/{id}` remains unvalidated |
+| Admin access | One endpoint filter guards all 11 admin routes; a missing or empty configured key fails closed; key comparison uses SHA-256 and `CryptographicOperations.FixedTimeEquals` |
+| Observability | Serilog structured logs, Application Insights requests and traces, correlation IDs, `/health` |
+| Transport | HTTPS Only enabled on App Service |
+| Tests and CI | 48 xUnit/Moq tests; the test job runs on pull requests and gates deployment on `main` |
+| Identity | Still a shared `X-Admin-Key` secret, not user identity |
+
+Not implemented and not claimed: Entra ID, Managed Identity, Key Vault, user authentication,
+per-user audit, key rotation, alerts or dashboards.
+
+## Changes after the original snapshot
+
+The case study first described backend `2dee6ae` on 2026-05-30. It now describes `bd8bf3c` on
+2026-11-26:
+
+- **Phase 3:** the xUnit suite was merged, a CI test stage was added, and `sync-qdrant` gained its
+  missing admin-key check. 21 tests at that point.
+- **Phase 4:** manual-quote request validation, a centralised fail-closed admin-key filter,
+  Serilog, Application Insights, correlation IDs and `/health`; HTTPS Only enabled.
+- **Phase 5:** .NET 10 / EF Core 10 upgrade, 48 tests, deployed and smoke-tested in production.
 
 ## Frontend surfaces
 
@@ -161,6 +190,8 @@ Six representative endpoints; the rest are omitted deliberately. All examples ar
 
 </details>
 
+`GET /health` is public and liveness-only; it checks no external dependency.
+
 Full contract with synthetic request and response bodies:
 [docs/api-contract.md](docs/api-contract.md).
 
@@ -183,11 +214,17 @@ Detail: [docs/data-model.md](docs/data-model.md).
 
 ## Testing
 
-- xUnit with Moq. Six test methods on the quote handler, totals and deterministic pricing.
+- xUnit with Moq. 48 tests on `main`.
+- Coverage includes exact totals for five renovation recipes, the `AI_ESTIMATE` fallback,
+  missing price-list codes, unknown recipes, intent-invariant repair, malformed model JSON,
+  Italian decimal commas, the admin-key guard, validation 400s with no repository write, every
+  admin route returning 401 without a key, `/health`, and correlation-ID behaviour.
+- The GitHub Actions test job runs on pull requests and before deployment on `main`. Deploy
+  depends on it.
+- Honest scope: the tests are in-process, using mocks and a `WebApplicationFactory` TestServer.
+  They do not use a real SQL Server, Azure SQL, Blob Storage, Qdrant or OpenAI endpoint.
 - One test asserts an exact total to the cent and proves the semantic path is not called when
   every line has a catalogue code.
-- Honest status: the suite lives on `test/autopreventivo-xunit`; it is not merged at the snapshot,
-  and the deploy workflow has no test stage.
 
 Detail: [docs/testing.md](docs/testing.md). Snippet:
 [04-exact-total-test.cs](snippets/04-exact-total-test.cs).
@@ -213,31 +250,47 @@ generalised accuracy claim. Detail: [docs/evaluation.md](docs/evaluation.md).
 ## Limitations
 
 - Solo developer; no code-review process.
-- Admin auth is a shared secret, not enterprise identity.
-- Request validation is not enforced at the edge.
-- No observability stack.
-- Tests are not in CI.
+- Admin auth is a shared secret, not enterprise identity. It is now centralised, fail-closed and
+  constant-time, but there is still no per-user identity, audit trail, rotation or expiry.
+- The admin key lives in browser storage.
+- Observability collects data, but there are no alert rules or dashboards yet.
+- Validation covers manual quote creation; `PUT /api/quotes/{id}` remains unvalidated.
+- Application Insights request and trace telemetry is live; dependency and exception telemetry
+  was not exercised by the production smoke traffic, and there are no alerts or dashboards.
+- Deployment authenticates with a credential secret, not OIDC.
+- No infrastructure as code.
+- No rate limiting beyond reCAPTCHA on quote creation.
+- No automatic quote-notification email.
+- Tests are in CI but in-process only: no real database, blob, Qdrant, OpenAI, PDF-layout or
+  browser tests. No load testing.
+- App Service runs on the F1 Free plan with no deployment slot; risky runtime changes can hit
+  worker-stop quota and disable the site.
 - Qdrant semantic lookup is local-only.
-- No load testing.
 - Evaluation has no holdout set.
 - No pricing provenance is persisted beyond the `AI_ESTIMATE` tag.
+- No multi-tenant model, versioned price lists or role separation.
 
 Detail: [docs/limitations.md](docs/limitations.md).
 
 ## What I would do next
 
-- Real admin identity and key rotation.
-- One observability signal with correlation IDs.
-- Test stage in CI.
-- .NET 10 / EF Core 10 upgrade.
-- Move the model provider to Azure OpenAI.
+- Real admin identity and key rotation, then Managed Identity and Key Vault.
+- Integration tests against SQL Server, Azure SQL, Blob Storage and Qdrant in an isolated
+  environment.
+- Alert rules and dashboards for 5xx rate, dependency failures and exceptions.
 - Persist pricing provenance per line item.
+- Add a validator for quote updates.
+- Move the model provider to Azure OpenAI.
+- Remove the `WithOpenApi` deprecation warnings and address the `Resend` /
+  `Microsoft.AspNetCore.WebUtilities` advisory.
+- Move off the F1 Free plan or add a deployment slot before risky changes.
 
 ## Links
 
 - Live product: [edilvos.it](https://www.edilvos.it)
 - Code excerpts: [snippets/](snippets/README.md)
-- CV and contact: available on request.
+- Portfolio: [marco.gl](https://www.marco.gl)
+- CV and contact: [Marco Fediuc — CV (PDF)](https://www.marco.gl/cv.pdf)
 
 ---
 <!--
