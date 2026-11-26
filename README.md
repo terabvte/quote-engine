@@ -14,10 +14,14 @@
 
 > **Documentation-only case study.** This repository describes a private production system; it is
 > not a runnable app and has no build step. The live product is at
-> [edilvos.it](https://www.edilvos.it). Screenshots are waived in this version; the placeholder
-> blocks are commented out and recorded in [screenshots/MANIFEST.md](screenshots/MANIFEST.md).
+> [edilvos.it](https://www.edilvos.it). 
 >
 > Snapshot: private commit `2dee6ae`, 2026-05-30. See [SYNC.md](SYNC.md).
+
+<!--
+Screenshots are waived in this version; the placeholder
+> blocks are commented out and recorded in [screenshots/MANIFEST.md](screenshots/MANIFEST.md).
+-->
 
 ```mermaid
 flowchart LR
