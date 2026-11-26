@@ -22,7 +22,7 @@ separate service, product or deployment.
 | Update | `PUT /api/quotes/{id}`, `X-Admin-Key` required |
 | Command | `CreateManualQuoteCommand` / `UpdateQuoteCommand` |
 | Handler | `CreateManualQuoteHandler` / `UpdateQuoteHandler` |
-| Validator | `CreateManualQuoteValidator` exists, but the DI scan targets the shell assembly; it is not registered or enforced at HEAD |
+| Validator | `CreateManualQuoteValidator` on create, registered in the MediatR pipeline; no validator on update |
 | Origin | `"Manual"` |
 | Item codes | `MANUAL_ENTRY` on create, `MANUAL_UPDATE` on update |
 | Draft | `IsDraft = true` skips PDF generation; `PdfUrl` stays null |
@@ -53,5 +53,5 @@ model.
 - Admin authorisation is a shared secret, not an identity. Anyone holding the key has the same
   access as an operator.
 - The key lives in browser storage; there is no server-side session or per-user attribution.
-- The API accepts operator-entered numbers as given. Request validation is not enforced at the
-  edge at this snapshot, and no check verifies commercial correctness.
+- Creation is validated: empty fields and non-positive values return `400` with field errors and
+  are not persisted. Updates remain unvalidated, and no check verifies commercial correctness.

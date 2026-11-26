@@ -1,8 +1,8 @@
 flowchart LR
     U["Visitor browser"] -->|HTTPS| F["Next.js 15 on Vercel"]
     F -->|JSON over HTTPS| A["ASP.NET Core Minimal API<br/>Azure App Service"]
-    A -->|EF Core 9| D[("Azure SQL")]
+    A -->|EF Core 10| D[("Azure SQL")]
     A -->|intent parsing, reranking,<br/>fallback estimates| L["OpenAI API"]
     A -->|PDF upload| B[("Azure Blob Storage")]
     A -->|QuestPDF, in process| P["Quote PDF"]
-    G["GitHub Actions"] -->|build and deploy| A
+    G["GitHub Actions<br/>test and deploy"] -->|build and deploy| A

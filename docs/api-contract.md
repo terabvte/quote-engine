@@ -9,7 +9,7 @@ They are omitted deliberately. All values below are synthetic.
 | Scheme | Where | Behaviour |
 |---|---|---|
 | reCAPTCHA token | `POST /api/quotes/generate` | Verified in the handler before any work; failure returns `400` |
-| `X-Admin-Key` | Admin handlers | Compared inline with the configured key; mismatch returns `401` |
+| `X-Admin-Key` | Admin routes | One fail-closed endpoint filter; a missing or empty configured key, a missing header or a wrong key returns `401` |
 | None | Public retrieval and PDF | The quote GUID is the identifier |
 
 There is no bearer token, cookie session or OAuth flow.
@@ -129,12 +129,13 @@ Request:
 ```
 
 - `200` with the created `Quote` (`origin: "Manual"`, items tagged `MANUAL_ENTRY`).
+- `400` with `ValidationProblemDetails` and field errors when the payload fails
+  `CreateManualQuoteValidator`; the request is not persisted.
 - `401` when the admin key is missing or wrong.
 
-The request record carries DataAnnotations, but at this snapshot the API does not run a request
-validation filter and the FluentValidation validator in the product assembly is not registered.
-Field ranges are therefore not enforced at the edge: empty strings and negative or zero values
-are accepted and stored as provided.
+Validation runs through the MediatR `ValidationBehavior`. The response includes a
+`correlationId` matching the `X-Correlation-ID` header, and the invalid request never reaches
+the handler or repository.
 
 With `"isDraft": true`, the response has `pdfUrl: null` and no blob write occurs.
 
@@ -151,6 +152,9 @@ Same request body as creation. The handler replaces the item collection, tags th
 - `400` with `{ "code": "Quote.NotFound", "name": "Preventivo non trovato." }` for an unknown ID.
   The route reports a missing quote as a bad request rather than a 404.
 - `401` on a bad key.
+
+Update is **not validated**. `UpdateQuoteCommand` uses the same request DTO but has no
+FluentValidation validator, so field ranges are enforced only on creation.
 
 ---
 

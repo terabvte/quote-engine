@@ -9,14 +9,16 @@ Short, specific and deliberate. These are engineering facts, not apologies.
 
 ## Security and operations
 
-- **Admin authentication is a shared secret.** `X-Admin-Key` is compared inline in the quote and
-  price-list handlers. There is no identity, role model, audit trail or key rotation.
+- **Admin authentication is a shared secret.** `X-Admin-Key` is now checked by one fail-closed,
+  constant-time endpoint filter across all 11 admin routes. There is still no identity, role
+  model, per-user audit trail, key rotation or expiry.
 - **The admin key lives in browser storage.** A stolen browser profile exposes the key. There is
   no server-side session.
-- **No observability stack.** Failures are surfaced through application logs and HTTP errors. No
-  Application Insights, OpenTelemetry, metrics dashboard or alerting.
-- **Request validation is not enforced.** The validation behaviour is registered, but the
-  validator scan targets the shell assembly; the product's validator is never resolved.
+- **No per-user attribution.** Every admin action has the same identity: whoever holds the key.
+- **Observability is collection, not alerting.** Serilog, Application Insights, correlation IDs
+  and `/health` are live. There are no alert rules, dashboards or dependency-health checks.
+- **Validation is partial.** `POST /api/quotes/manual` is validated. `PUT /api/quotes/{id}` uses
+  the same DTO but has no validator.
 - **No infrastructure as code.** Deployment is a workflow plus App Service configuration outside
   the repository. There is no Bicep or Terraform.
 - **Deployment authenticates with a credential secret,** not OIDC or a federated identity, even
@@ -25,14 +27,18 @@ Short, specific and deliberate. These are engineering facts, not apologies.
 - **No automatic quote-notification email.** The backend's Resend registration and send calls are
   disabled. The marketing contact form has its own email route and is separate from quote
   delivery.
+- **The App Service plan is F1 Free with no deployment slot.** Repeated crashes can exhaust the
+  worker-stop quota and disable the site. A risky runtime change has no slot-based rollback.
 
 ## Testing
 
-- **Tests are not in CI.** The suite lives on `test/autopreventivo-xunit`, is not merged, and the
-  deploy workflow has no test stage.
-- **No integration or HTTP-level tests.** No database, PDF, blob or endpoint coverage.
+- **Tests are in CI but in-process only.** The 48 tests use mocks and a `WebApplicationFactory`
+  TestServer. They do not use a real SQL Server, Azure SQL, Blob Storage, Qdrant or OpenAI
+  endpoint.
+- **No integration or end-to-end tests.** No coverage of a real database, real blob storage, PDF
+  rendering on a real file system or the deployed environment.
 - **No load or volume testing.** The system has not been exercised at scale.
-- **No frontend tests.**
+- **No frontend tests are in this case study.**
 
 ## AI and data
 
