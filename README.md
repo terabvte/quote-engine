@@ -286,7 +286,7 @@ Detail: [docs/limitations.md](docs/limitations.md).
 - Live product: [edilvos.it](https://www.edilvos.it)
 - Code excerpts: [snippets/](snippets/README.md)
 - Portfolio: [marco.gl](https://www.marco.gl)
-- CV and contact: available on request.
+- CV and contact: [Marco Fediuc — CV (PDF)](https://www.marco.gl/cv.pdf)
 
 ---
 
